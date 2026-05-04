@@ -5,7 +5,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 import os
 
-TOKEN = os.environ.get("TOKEN")  # Токен будет передан через переменную окружения
+TOKEN = os.environ.get("TOKEN")
 if not TOKEN:
     raise ValueError("Не задан токен")
 
@@ -22,10 +22,12 @@ async def help(message: types.Message):
 
 @dp.message()
 async def echo(message: types.Message):
-    # Здесь потом добавишь свою логику
     await message.answer(f"Вы написали: <code>{message.text}</code>")
 
 async def main():
+    # Удаляем вебхук (если он был установлен ранее)
+    await bot.delete_webhook(drop_pending_updates=True)
+    print("Webhook удалён. Запускаем polling...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
