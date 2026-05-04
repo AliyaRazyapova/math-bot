@@ -1,0 +1,9 @@
+*.log
+.env
+.idea
+.qodo
+build/
+vendor/
+deletor.json
+*.pyc
+__pycache__/
