@@ -3,6 +3,7 @@ import io
 import math
 import os
 import re
+import threading
 import sympy as sp
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,13 +12,29 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
+from flask import Flask
 
+# ---------- Настройки ----------
 TOKEN = os.environ.get("TOKEN")
 if not TOKEN:
     raise ValueError("Токен не задан в переменной окружения TOKEN")
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
+
+# ---------- Flask для health-чеков ----------
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def index():
+    return "Математический бот работает!"
+
+@flask_app.route('/health')
+def health():
+    return "OK", 200
+
+def run_flask():
+    flask_app.run(host='0.0.0.0', port=8000)
 
 # ---------- Генерация изображения формулы ----------
 def generate_formula_image(formula_text: str) -> io.BytesIO:
@@ -56,7 +73,7 @@ def plot_expression(expr_str: str, var: str = 'x') -> io.BytesIO:
     buf.seek(0)
     return buf
 
-# ---------- Команды ----------
+# ---------- Команды бота ----------
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer(
@@ -199,7 +216,6 @@ async def handle_text(message: types.Message):
             if not rest:
                 await message.answer("❌ Пример: реши систему x+y=2, x-y=0")
                 return
-            # Переиспользуем логику solve_system
             try:
                 eq_parts = re.split(r'[,;]', rest)
                 equations = []
@@ -244,7 +260,12 @@ async def handle_text(message: types.Message):
     except Exception as e:
         await message.answer(f"❌ Ошибка: {e}")
 
+# ---------- Запуск бота и Flask ----------
 async def main():
+    # Запускаем Flask в отдельном потоке
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    # Запускаем бота (основной поток)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
