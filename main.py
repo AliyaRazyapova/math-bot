@@ -67,14 +67,38 @@ async def cmd_start(message: types.Message):
 
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
-    await message.answer(
-        "📚 Команды:\n"
-        "1. <code>Пифагор a b</code> – гипотенуза\n"
-        "2. <code>Квадрат a b c</code> – корни уравнения\n"
-        "3. <code>/solve_system x+y=2, x-y=0</code> – система уравнений\n"
-        "4. <code>/plot x**2 - 3*x + 2</code> – график\n"
-        "5. <code>реши систему ...</code> или <code>построй график ...</code>"
+    help_text = (
+        "📚 <b>Справка по математическому боту</b>\n\n"
+        "🔹 <b>Теорема Пифагора</b>\n"
+        "   <code>Пифагор a b</code>\n"
+        "   Пример: <code>Пифагор 3 4</code> → гипотенуза = 5\n\n"
+        "🔹 <b>Квадратное уравнение</b>\n"
+        "   <code>Квадрат a b c</code>\n"
+        "   Пример: <code>Квадрат 1 -5 6</code> → корни 2 и 3\n\n"
+        "🔹 <b>Системы уравнений</b>\n"
+        "   <code>/solve_system уравнение1, уравнение2</code>\n"
+        "   Пример: <code>/solve_system x+y=2, x-y=0</code>\n"
+        "   → решение: x = 1, y = 1\n\n"
+        "   Можно писать просто: <code>реши систему x+y=2, x-y=0</code>\n\n"
+        "🔹 <b>Построение графиков</b>\n"
+        "   <code>/plot выражение</code>\n"
+        "   Пример: <code>/plot x**2 - 3*x + 2</code> → присылает картинку параболы\n\n"
+        "   Можно писать: <code>построй график x**2 - 4</code>\n\n"
+        "🔹 <b>Поддерживаемые операции в выражениях:</b>\n"
+        "   • <code>+</code> сложение, <code>-</code> вычитание\n"
+        "   • <code>*</code> умножение, <code>/</code> деление\n"
+        "   • <code>**</code> степень (например x**2)\n"
+        "   • <code>sqrt(x)</code> корень, <code>sin(x)</code>, <code>cos(x)</code>, <code>log(x)</code>\n\n"
+        "🔹 <b>Общие команды:</b>\n"
+        "   <code>/start</code> – приветствие\n"
+        "   <code>/help</code> – эта справка\n"
+        "   <code>/list</code> – краткий список функций\n"
+        "   <code>/solve_system</code> – решение систем\n"
+        "   <code>/plot</code> – построение графиков\n\n"
+        "💡 <b>Совет:</b> Если не знаете, как записать выражение, спросите: <code>как записать степень</code> или <code>примеры</code>\n"
+        "📢 <b>Обратная связь:</b> Если нашли ошибку или есть идеи – пишите разработчику."
     )
+    await message.answer(help_text)
 
 @dp.message(Command("list"))
 async def cmd_list(message: types.Message):
