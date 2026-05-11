@@ -3,6 +3,9 @@ import io
 import math
 import os
 import re
+import sympy as sp
+import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from aiogram import Bot, Dispatcher, types
 from aiogram.client.default import DefaultBotProperties
@@ -20,14 +23,12 @@ dp = Dispatcher()
 # ---------- Вспомогательные функции ----------
 def generate_formula_image(formula_text: str) -> io.BytesIO:
     """Создаёт PNG-изображение с формулой и возвращает BytesIO."""
-    img = Image.new('RGB', (500, 120), color='white')
+    img = Image.new('RGB', (600, 120), color='white')
     draw = ImageDraw.Draw(img)
     try:
-        # Попробуем загрузить шрифт (если есть), иначе default
         font = ImageFont.truetype("arial.ttf", 24)
     except:
         font = ImageFont.load_default()
-    # Разбиваем длинный текст на строки
     lines = formula_text.split('\n')
     y = 20
     for line in lines:
@@ -38,6 +39,32 @@ def generate_formula_image(formula_text: str) -> io.BytesIO:
     buf.seek(0)
     return buf
 
+def plot_expression(expr_str: str, var: str = 'x') -> io.BytesIO:
+    """Строит график функции и возвращает BytesIO с PNG."""
+    try:
+        # Определяем символ и функцию
+        x = sp.Symbol(var)
+        expr = sp.sympify(expr_str)
+        f = sp.lambdify(x, expr, modules='numpy')
+        # Генерируем точки
+        x_vals = np.linspace(-10, 10, 400)
+        y_vals = f(x_vals)
+        # Строим график
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_vals, y_vals, linewidth=2)
+        plt.title(f'График функции: {expr_str}')
+        plt.xlabel(var)
+        plt.ylabel(f'f({var})')
+        plt.grid(True)
+        # Сохраняем в буфер
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        plt.close()
+        buf.seek(0)
+        return buf
+    except Exception as e:
+        raise ValueError(f"Ошибка построения графика: {e}")
+
 # ---------- Обработчики команд ----------
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -45,40 +72,109 @@ async def cmd_start(message: types.Message):
         "👋 Привет! Я <b>математический бот</b>.\n"
         "Доступные команды:\n"
         "/help – справка\n"
-        "/list – список формул и задач\n\n"
+        "/list – список всех функций\n\n"
         "Примеры:\n"
         "<code>Пифагор 3 4</code> – гипотенуза\n"
-        "<code>Квадрат 1 -5 6</code> – корни уравнения"
+        "<code>Квадрат 1 -5 6</code> – корни уравнения\n"
+        "<code>/solve_system x+y=2, x-y=0</code> – система уравнений\n"
+        "<code>/plot x**2 - 3*x + 2</code> – построить график"
     )
 
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
     await message.answer(
         "📚 <b>Помощь</b>\n\n"
-        "<b>Теорема Пифагора:</b>\n"
-        "Напишите: <code>Пифагор a b</code>, где a и b – катеты.\n"
-        "Пример: <code>Пифагор 3 4</code> → гипотенуза = 5\n\n"
-        "<b>Квадратное уравнение:</b>\n"
-        "Напишите: <code>Квадрат a b c</code>\n"
-        "Пример: <code>Квадрат 1 -5 6</code> → корни 2.0 и 3.0\n\n"
-        "<b>Другие команды:</b>\n"
-        "/list – полный список функций\n"
+        "<b>1. Теорема Пифагора:</b>\n"
+        "<code>Пифагор a b</code> → пример: Пифагор 3 4\n\n"
+        "<b>2. Квадратные уравнения:</b>\n"
+        "<code>Квадрат a b c</code> → пример: Квадрат 1 -5 6\n\n"
+        "<b>3. Системы уравнений:</b>\n"
+        "<code>/solve_system уравнение1, уравнение2</code>\n"
+        "Пример: <code>/solve_system x+y=2, x-y=0</code>\n\n"
+        "<b>4. Построение графиков:</b>\n"
+        "<code>/plot выражение</code> (переменная x)\n"
+        "Пример: <code>/plot x**2 - 4</code>\n\n"
+        "<b>Общие команды:</b>\n"
+        "/list – полный список\n"
         "/start – приветствие"
     )
 
 @dp.message(Command("list"))
 async def cmd_list(message: types.Message):
     text = (
-        "📋 <b>Доступные математические функции:</b>\n\n"
-        "1️⃣ <b>Теорема Пифагора</b>\n"
-        "   → <code>Пифагор 3 4</code>\n\n"
-        "2️⃣ <b>Квадратное уравнение</b>\n"
-        "   → <code>Квадрат 1 -5 6</code>\n\n"
-        "Больше функций будет добавлено в следующих версиях!"
+        "📋 <b>Все возможности бота</b>\n\n"
+        "🔹 <b>Теорема Пифагора</b>\n"
+        "   <code>Пифагор 3 4</code>\n\n"
+        "🔹 <b>Квадратное уравнение</b>\n"
+        "   <code>Квадрат 1 -5 6</code>\n\n"
+        "🔹 <b>Системы линейных уравнений</b>\n"
+        "   <code>/solve_system x+y=2, x-y=0</code>\n\n"
+        "🔹 <b>Построение графиков</b>\n"
+        "   <code>/plot x**2 - 3*x + 2</code>\n\n"
+        "🔹 <b>Справка</b>\n"
+        "   <code>/help</code>\n"
     )
     await message.answer(text)
 
-# ---------- Обработка текстовых сообщений ----------
+@dp.message(Command("solve_system"))
+async def cmd_solve_system(message: types.Message):
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        await message.answer("❌ Введите уравнения после команды. Пример:\n<code>/solve_system x+y=2, x-y=0</code>")
+        return
+    eq_str = args[1]
+    try:
+        # Разделяем уравнения по запятой или точке с запятой
+        eq_parts = re.split(r'[,;]', eq_str)
+        equations = []
+        variables = set()
+        for part in eq_parts:
+            left, right = part.split('=')
+            expr = sp.sympify(left.strip()) - sp.sympify(right.strip())
+            equations.append(expr)
+            # Находим все символы (переменные)
+            for sym in expr.free_symbols:
+                variables.add(sym)
+        if not variables:
+            await message.answer("❌ Не удалось определить переменные.")
+            return
+        # Решаем систему
+        solution = sp.solve(equations, list(variables))
+        if not solution:
+            await message.answer("❌ Система не имеет решений.")
+            return
+        # Формируем ответ
+        if isinstance(solution, list) and len(solution) == 1:
+            solution = solution[0]  # один кортеж решений
+        # Если решение – словарь
+        if isinstance(solution, dict):
+            ans_lines = [f"{var} = {solution[var]}" for var in solution]
+        elif isinstance(solution, (tuple, list)):
+            ans_lines = [f"{var} = {solution[i]}" for i, var in enumerate(variables)]
+        else:
+            ans_lines = [str(solution)]
+        answer_text = "✅ Решение системы:\n" + "\n".join(ans_lines)
+        await message.answer(answer_text)
+    except Exception as e:
+        await message.answer(f"❌ Ошибка при решении: {e}\nПример: <code>/solve_system x+y=2, x-y=0</code>")
+
+@dp.message(Command("plot"))
+async def cmd_plot(message: types.Message):
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        await message.answer("❌ Укажите выражение. Пример:\n<code>/plot x**2 - 4</code>")
+        return
+    expr = args[1].strip()
+    try:
+        img_buf = plot_expression(expr)
+        await message.answer_photo(
+            photo=types.BufferedInputFile(img_buf.getvalue(), filename="plot.png"),
+            caption=f"📈 График функции: <code>{expr}</code>"
+        )
+    except Exception as e:
+        await message.answer(f"❌ Не удалось построить график: {e}\nПример: <code>/plot x**2 - 4</code>")
+
+# ---------- Обработка текстовых сообщений (без команд) ----------
 @dp.message()
 async def handle_math(message: types.Message):
     text = message.text.strip().lower()
@@ -92,7 +188,6 @@ async def handle_math(message: types.Message):
             a = float(parts[1])
             b = float(parts[2])
             c = math.sqrt(a*a + b*b)
-            # Исправленная строка формулы
             formula_str = f"c = √({a}² + {b}²) = {c:.2f}"
             img_buf = generate_formula_image(formula_str)
             await message.answer_photo(
@@ -115,16 +210,73 @@ async def handle_math(message: types.Message):
             sqrt_d = math.sqrt(d)
             x1 = (-b + sqrt_d) / (2*a)
             x2 = (-b - sqrt_d) / (2*a)
-            formula_str = f"x₁ = {x1:.2f}\nx₂ = {x2:.2f}"
-            # Можно отправить текстом
-            await message.answer(f"🔢 Корни уравнения:\n<code>{formula_str}</code>")
+            answer_text = f"x₁ = {x1:.2f}\nx₂ = {x2:.2f}"
+            await message.answer(f"🔢 Корни квадратного уравнения:\n<code>{answer_text}</code>")
+            return
+
+        # ----- Альтернативный формат для систем уравнений (без команды) -----
+        if text.startswith("реши систему") or text.startswith("система"):
+            # Извлекаем уравнения после ключевых слов
+            rest = re.sub(r'^(реши систему|система)', '', text).strip()
+            if not rest:
+                await message.answer("❌ Пример: <code>реши систему x+y=2, x-y=0</code>")
+                return
+            # Переиспользуем логику solve_system
+            try:
+                eq_parts = re.split(r'[,;]', rest)
+                equations = []
+                variables = set()
+                for part in eq_parts:
+                    left, right = part.split('=')
+                    expr = sp.sympify(left.strip()) - sp.sympify(right.strip())
+                    equations.append(expr)
+                    for sym in expr.free_symbols:
+                        variables.add(sym)
+                if not variables:
+                    await message.answer("❌ Не удалось определить переменные.")
+                    return
+                solution = sp.solve(equations, list(variables))
+                if not solution:
+                    await message.answer("❌ Система не имеет решений.")
+                    return
+                if isinstance(solution, list) and len(solution) == 1:
+                    solution = solution[0]
+                if isinstance(solution, dict):
+                    ans_lines = [f"{var} = {solution[var]}" for var in solution]
+                elif isinstance(solution, (tuple, list)):
+                    ans_lines = [f"{var} = {solution[i]}" for i, var in enumerate(variables)]
+                else:
+                    ans_lines = [str(solution)]
+                answer_text = "✅ Решение системы:\n" + "\n".join(ans_lines)
+                await message.answer(answer_text)
+            except Exception as e:
+                await message.answer(f"❌ Ошибка: {e}\nПример: <code>реши систему x+y=2, x-y=0</code>")
+            return
+
+        # ----- Альтернативный формат для графика (без команды) -----
+        if text.startswith("построй график") or text.startswith("график"):
+            expr = re.sub(r'^(построй график|график)', '', text).strip()
+            if not expr:
+                await message.answer("❌ Пример: <code>построй график x**2 - 4</code>")
+                return
+            try:
+                img_buf = plot_expression(expr)
+                await message.answer_photo(
+                    photo=types.BufferedInputFile(img_buf.getvalue(), filename="plot.png"),
+                    caption=f"📈 График: <code>{expr}</code>"
+                )
+            except Exception as e:
+                await message.answer(f"❌ Ошибка: {e}")
             return
 
         # ----- Если ничего не подошло -----
         await message.answer(
             "🤔 Я не понял запрос.\n"
             "Используйте /help или /list для списка команд.\n"
-            "Пример: <code>Пифагор 3 4</code>"
+            "Примеры:\n"
+            "<code>Пифагор 3 4</code>\n"
+            "<code>/plot x**2 - 4</code>\n"
+            "<code>/solve_system x+y=2, x-y=0</code>"
         )
     except ValueError:
         await message.answer("❌ Ошибка: введите числа. Например: <code>Пифагор 3 4</code>")
