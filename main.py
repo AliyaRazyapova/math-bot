@@ -92,8 +92,8 @@ async def handle_math(message: types.Message):
             a = float(parts[1])
             b = float(parts[2])
             c = math.sqrt(a*a + b*b)
+            # Исправленная строка формулы
             formula_str = f"c = √({a}² + {b}²) = {c:.2f}"
-            # Генерируем изображение
             img_buf = generate_formula_image(formula_str)
             await message.answer_photo(
                 photo=types.BufferedInputFile(img_buf.getvalue(), filename="formula.png"),
