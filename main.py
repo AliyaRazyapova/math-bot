@@ -109,9 +109,7 @@ async def cmd_help(message: types.Message):
         "   <code>/help</code> – эта справка\n"
         "   <code>/list</code> – краткий список функций\n"
         "   <code>/solve_system</code> – решение систем\n"
-        "   <code>/plot</code> – построение графиков\n\n"
-        "💡 <b>Совет:</b> Если не знаете, как записать выражение, спросите: <code>как записать степень</code> или <code>примеры</code>\n"
-        "📢 <b>Обратная связь:</b> Если нашли ошибку или есть идеи – пишите разработчику."
+        "   <code>/plot</code> – построение графиков"
     )
     await message.answer(help_text)
 
