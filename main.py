@@ -14,7 +14,6 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from flask import Flask
 
-# ---------- Настройки ----------
 TOKEN = os.environ.get("TOKEN")
 if not TOKEN:
     raise ValueError("Токен не задан в переменной окружения TOKEN")
@@ -22,7 +21,6 @@ if not TOKEN:
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
-# ---------- Flask для health-чеков ----------
 flask_app = Flask(__name__)
 
 @flask_app.route('/')
@@ -255,17 +253,13 @@ async def handle_text(message: types.Message):
                 await message.answer(f"❌ Ошибка: {e}")
             return
 
-        # Если ничего не подошло
         await message.answer("🤔 Я не понял запрос.\nИспользуйте /help или /list")
     except Exception as e:
         await message.answer(f"❌ Ошибка: {e}")
 
-# ---------- Запуск бота и Flask ----------
 async def main():
-    # Запускаем Flask в отдельном потоке
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
-    # Запускаем бота (основной поток)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
